@@ -41,10 +41,12 @@ the use of this software, even if advised of the possibility of such damage.
 #define _OPENCV_FFTTOOLS_HPP_
 #endif
 
-//NOTE: FFTW support is still shaky, disabled for now.
-/*#ifdef USE_FFTW
+
+#define USE_FFTW // using fftw
+
+#ifdef USE_FFTW
 #include <fftw3.h>
-#endif*/
+#endif
 
 namespace FFTTools
 {
@@ -61,21 +63,21 @@ void normalizedLogTransform(cv::Mat &img);
 
 cv::Mat fftd(cv::Mat img, bool backwards)
 {
-/*
+
 #ifdef USE_FFTW
 
     fftw_complex * fm = (fftw_complex*) fftw_malloc(sizeof (fftw_complex) * img.cols * img.rows);
 
-    fftw_plan p = fftw_plan_dft_2d(img.rows, img.cols, fm, fm, backwards ? 1 : -1, 0 * FFTW_ESTIMATE);
+    fftw_plan p = fftw_plan_dft_2d(img.rows, img.cols, fm, fm, backwards ? 1 : -1, FFTW_ESTIMATE);
 
 
-    if (img.channels() == 1)
+ if (img.channels() == 1)
     {
         for (int i = 0; i < img.rows; i++)
             for (int j = 0; j < img.cols; j++)
             {
-                fm[i * img.cols + j][0] = img.at<float>(i, j);
-                fm[i * img.cols + j][1] = 0;
+                fm[i * img.cols + j][0] = static_cast<double>(img.at<float>(i, j));
+                fm[i * img.cols + j][1] = 0.d;
             }
     }
     else
@@ -84,31 +86,31 @@ cv::Mat fftd(cv::Mat img, bool backwards)
         for (int i = 0; i < img.rows; i++)
             for (int j = 0; j < img.cols; j++)
             {
-                fm[i * img.cols + j][0] = img.at<cv::Vec2d > (i, j)[0];
-                fm[i * img.cols + j][1] = img.at<cv::Vec2d > (i, j)[1];
+                fm[i * img.cols + j][0] = static_cast<double>(img.at<cv::Vec2f> (i, j)[0]);
+                fm[i * img.cols + j][1] = static_cast<double>(img.at<cv::Vec2f> (i, j)[1]);
             }
     }
     fftw_execute(p);
-    cv::Mat res(img.rows, img.cols, CV_64FC2);
+    cv::Mat res(img.rows, img.cols, CV_32FC2);
 
 
     for (int i = 0; i < img.rows; i++)
         for (int j = 0; j < img.cols; j++)
         {
-            res.at<cv::Vec2d > (i, j)[0] = fm[i * img.cols + j][0];
-            res.at<cv::Vec2d > (i, j)[1] = fm[i * img.cols + j][1];
+            res.at<cv::Vec2f>(i, j)[0] = static_cast<float>(fm[i * img.cols + j][0]);
+            res.at<cv::Vec2f>(i, j)[1] = static_cast<float>(fm[i * img.cols + j][1]);
 
-            //  _iout(fm[i * img.cols + j][0]);
+//              _iout(fm[i * img.cols + j][0]);
         }
 
-    if (backwards)res *= 1.d / (float) (res.cols * res.rows);
+    if (backwards) res *= 1.f / (float) (res.cols * res.rows);
 
     fftw_free(p);
     fftw_free(fm);
     return res;
 
 #else
-*/
+
     if (img.channels() == 1)
     {
         cv::Mat planes[] = {cv::Mat_<float> (img), cv::Mat_<float>::zeros(img.size())};
@@ -119,7 +121,7 @@ cv::Mat fftd(cv::Mat img, bool backwards)
 
     return img;
 
-/*#endif*/
+#endif
 
 }
 

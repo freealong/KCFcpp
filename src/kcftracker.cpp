@@ -87,6 +87,7 @@ the use of this software, even if advised of the possibility of such damage.
 #include "fhog.hpp"
 #include "labdata.hpp"
 #endif
+#include <iostream>
 
 // Constructor
 KCFTracker::KCFTracker(bool hog, bool fixed_window, bool multiscale, bool lab)
@@ -264,7 +265,7 @@ void KCFTracker::train(cv::Mat x, float train_interp_factor)
 
     cv::Mat k = gaussianCorrelation(x, x);
     cv::Mat alphaf = complexDivision(_prob, (fftd(k) + lambda));
-    
+
     _tmpl = (1 - train_interp_factor) * _tmpl + (train_interp_factor) * x;
     _alphaf = (1 - train_interp_factor) * _alphaf + (train_interp_factor) * alphaf;
 

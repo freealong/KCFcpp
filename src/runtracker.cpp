@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <chrono>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -18,7 +19,7 @@ int main(int argc, char* argv[]){
 	if (argc > 5) return -1;
 
 	bool HOG = true;
-	bool FIXEDWINDOW = false;
+	bool FIXEDWINDOW = true;
 	bool MULTISCALE = true;
 	bool SILENT = true;
 	bool LAB = false;
@@ -39,6 +40,11 @@ int main(int argc, char* argv[]){
 		if ( strcmp (argv[i], "gray") == 0 )
 			HOG = false;
 	}
+	HOG = true;
+	FIXEDWINDOW = true;
+	MULTISCALE = false; // need fixedwindow true
+	SILENT = false;
+	LAB = false;
 	
 	// Create KCFTracker object
 	KCFTracker tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
@@ -56,7 +62,7 @@ int main(int argc, char* argv[]){
 
   	// Read groundtruth for the 1st frame
   	ifstream groundtruthFile;
-	string groundtruth = "region.txt";
+	string groundtruth = "groundtruth_rect.txt";
   	groundtruthFile.open(groundtruth);
   	string firstLine;
   	getline(groundtruthFile, firstLine);
@@ -65,30 +71,38 @@ int main(int argc, char* argv[]){
   	istringstream ss(firstLine);
 
   	// Read groundtruth like a dumb
-  	float x1, y1, x2, y2, x3, y3, x4, y4;
+//  	float x1, y1, x2, y2, x3, y3, x4, y4;
   	char ch;
-	ss >> x1;
-	ss >> ch;
-	ss >> y1;
-	ss >> ch;
-	ss >> x2;
-	ss >> ch;
-	ss >> y2;
-	ss >> ch;
-	ss >> x3;
-	ss >> ch;
-	ss >> y3;
-	ss >> ch;
-	ss >> x4;
-	ss >> ch;
-	ss >> y4; 
+//	ss >> x1;
+//	ss >> ch;
+//	ss >> y1;
+//	ss >> ch;
+//	ss >> x2;
+//	ss >> ch;
+//	ss >> y2;
+//	ss >> ch;
+//	ss >> x3;
+//	ss >> ch;
+//	ss >> y3;
+//	ss >> ch;
+//	ss >> x4;
+//	ss >> ch;
+//	ss >> y4;
 
+  	float xMin, yMin, width, height;
+	ss>>xMin;
+	ss >> ch;
+	ss>>yMin;
+	ss >> ch;
+	ss>>width;
+	ss >> ch;
+	ss>>height;
+	std::cout<<xMin<<" "<<yMin<<" "<<width<<" "<<height<<std::endl;
 	// Using min and max of X and Y for groundtruth rectangle
-	float xMin =  min(x1, min(x2, min(x3, x4)));
-	float yMin =  min(y1, min(y2, min(y3, y4)));
-	float width = max(x1, max(x2, max(x3, x4))) - xMin;
-	float height = max(y1, max(y2, max(y3, y4))) - yMin;
-
+//	float xMin =  min(x1, min(x2, min(x3, x4)));
+//	float yMin =  min(y1, min(y2, min(y3, y4)));
+//	float width = max(x1, max(x2, max(x3, x4))) - xMin;
+//	float height = max(y1, max(y2, max(y3, y4))) - yMin;
 	
 	// Read Images
 	ifstream listFramesFile;
@@ -105,10 +119,10 @@ int main(int argc, char* argv[]){
 	// Frame counter
 	int nFrames = 0;
 
+    std::chrono::high_resolution_clock::time_point t1, t2;
+    std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
 
 	while ( getline(listFramesFile, frameName) ){
-		frameName = frameName;
-
 		// Read each frame from the list
 		frame = imread(frameName, CV_LOAD_IMAGE_COLOR);
 
@@ -120,7 +134,11 @@ int main(int argc, char* argv[]){
 		}
 		// Update
 		else{
+            t1 = std::chrono::high_resolution_clock::now();
 			result = tracker.update(frame);
+            t2 = std::chrono::high_resolution_clock::now();
+			time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+            std::cout << "time: " << time_span.count() * 1000 << "ms\n";
 			rectangle( frame, Point( result.x, result.y ), Point( result.x+result.width, result.y+result.height), Scalar( 0, 255, 255 ), 1, 8 );
 			resultsFile << result.x << "," << result.y << "," << result.width << "," << result.height << endl;
 		}
